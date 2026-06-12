@@ -1,15 +1,16 @@
 [project]
 name = "hse-bigdata-project-work"
 version = "0.1.0"
-description = "Add your description here"
+description = "Потоковая аналитика событий IoT на Apache Flink (PyFlink): Kafka + PostgreSQL"
 readme = "README.md"
-requires-python = ">=3.11.11"
+requires-python = ">=3.11,<3.12"
 dependencies = [
-    "jupyter>=1.1.1",
-    "matplotlib>=3.11.0",
-    "numpy>=2.4.6",
-    "pandas>=3.0.3",
-    "polars>=1.41.2",
-    "scikit-learn>=1.9.0",
-    "seaborn>=0.13.2",
+    "apache-flink>=2.0.0",
+    "kafka-python>=3.0.0",
+    "psycopg2-binary>=2.9.12",
 ]
+
+# apache-beam (зависимость apache-flink) при сборке требует pkg_resources,
+# который удалён из setuptools >= 81. Закрепляем старый setuptools для сборки.
+[tool.uv.extra-build-dependencies]
+apache-beam = ["setuptools<80"]

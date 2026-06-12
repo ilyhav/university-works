@@ -1,0 +1,20 @@
+# Flink runtime
+*.log
+flink-checkpoints/
+flink-savepoints/
+
+# Скачанные jar-коннекторы (берутся через scripts/download_jars.sh)
+jars/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.ipynb_checkpoints/
+
+# Локальные настройки
+.env
+
+# Служебные каталоги редактора/инструментов
+.vscode/
+.claude/
