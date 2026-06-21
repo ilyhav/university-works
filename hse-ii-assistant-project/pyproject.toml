@@ -1,0 +1,35 @@
+[project]
+name = "hse-ii-assistant-project"
+version = "0.1.0"
+description = "ВкладНавигатор — гибридный ИИ-ассистент подбора вклада (детерминированное ядро + GigaChat) с MLOps-обвязкой"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "streamlit>=1.40",
+    "pandas>=2.2",
+    "numpy>=2.0",
+    "pydantic>=2.9",
+    "python-dotenv>=1.0",
+    "gigachat>=0.1.39",
+    "plotly>=5.24",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.8",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

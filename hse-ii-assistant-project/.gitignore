@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# env / secrets
+.env
+.envrc
+
+# IDE / tooling
+.idea/
+.vscode/
+.claude/
+
+# runtime artefacts (логи мониторинга и отчёты — генерируются при работе)
+data/runtime/*.jsonl
+data/runtime/*.json
+!data/runtime/.gitkeep
+data/runtime/snapshots/*.json
+!data/runtime/snapshots/.gitkeep

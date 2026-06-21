@@ -1,0 +1,17 @@
+services:
+  app:
+    build: .
+    image: vklad-navigator:latest
+    ports:
+      - "8501:8501"
+    environment:
+      # LLM-слой опционален. Без ключа — детерминированный офлайн-режим.
+      - GIGACHAT_CREDENTIALS=${GIGACHAT_CREDENTIALS:-}
+      - GIGACHAT_MODEL=${GIGACHAT_MODEL:-GigaChat-2-Max}
+      - GIGACHAT_SCOPE=${GIGACHAT_SCOPE:-GIGACHAT_API_PERS}
+      - GIGACHAT_VERIFY_SSL=${GIGACHAT_VERIFY_SSL:-false}
+      - CATALOG_FRESHNESS_SLA_DAYS=${CATALOG_FRESHNESS_SLA_DAYS:-14}
+    volumes:
+      # Журнал мониторинга переживает перезапуск контейнера.
+      - ./data/runtime:/app/data/runtime
+    restart: unless-stopped
