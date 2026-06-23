@@ -53,8 +53,10 @@
    `make drift` (демонстрация деградации → REFRESH → восстановление).
 5. [`presentation/roles.md`](presentation/roles.md) — **кто что делал** и кто что
    рассказывает на защите; [`presentation/script.md`](presentation/script.md) — текст
-   доклада по слайдам; [`presentation/deck.html`](presentation/deck.html) — **готовые
-   слайды** (открыть в браузере, печать в PDF через Cmd/Ctrl+P, альбомная).
+   доклада по слайдам + вопросы комиссии; [`presentation/demo_runbook.md`](presentation/demo_runbook.md)
+   — **пошаговый запуск, токен GigaChat и тайминг демо**;
+   [`presentation/deck.html`](presentation/deck.html) — **готовые слайды** (открыть в
+   браузере, печать в PDF через Cmd/Ctrl+P, альбомная).
 6. Глубже по каждому критерию — `docs/00_overview.md` … `docs/06_decommission.md`.
 
 Где «сердце» проекта в коде: `src/core/` (детерминированное ядро — все цифры),
