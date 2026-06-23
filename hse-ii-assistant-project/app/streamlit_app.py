@@ -216,10 +216,13 @@ def render_response(resp: AssistantResponse, assistant: Assistant) -> None:
               delta=f"номинал {top.deposit.nominal_rate}%")
     m2.metric("Доход за срок", f"{round(top.total_interest):,} {cur}".replace(",", " "))
     if cur == "RUB":
-        m3.metric("Застраховано АСВ", f"{round(top.insured_amount):,} ₽".replace(",", " "),
-                  delta=None if top.uninsured_amount == 0
-                  else f"-{round(top.uninsured_amount):,} ₽ вне страховки".replace(",", " "),
-                  delta_color="inverse")
+        if top.uninsured_amount == 0:
+            m3.metric("Застраховано АСВ", f"{round(top.insured_amount):,} ₽".replace(",", " "),
+                      delta="вся сумма застрахована (лимит 1,4 млн ₽)", delta_color="off")
+        else:
+            m3.metric("Застраховано АСВ", f"{round(top.insured_amount):,} ₽".replace(",", " "),
+                      delta=f"-{round(top.uninsured_amount):,} ₽ вне страховки".replace(",", " "),
+                      delta_color="inverse")
     else:
         m3.metric("Сумма к концу срока", f"{round(top.future_value):,} {cur}".replace(",", " "))
 
