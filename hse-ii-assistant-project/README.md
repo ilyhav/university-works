@@ -51,7 +51,9 @@
    потом `make app` — открыть http://localhost:8501 и потыкать вкладку «🎬 Демо».
 4. Прогнать проверки: `make test` (42 теста), `make eval` (валидация → вердикт OK),
    `make drift` (демонстрация деградации → REFRESH → восстановление).
-5. [`presentation/roles.md`](presentation/roles.md) — **кто что делал** и кто что
+5. [`presentation/study_guide.md`](presentation/study_guide.md) — **учебный гид: разобраться
+   в проекте с нуля** (всё от 0 до конца простым языком — читать, если не смотрели проект);
+   [`presentation/roles.md`](presentation/roles.md) — **кто что делал** и кто что
    рассказывает на защите; [`presentation/script.md`](presentation/script.md) — текст
    доклада по слайдам + вопросы комиссии; [`presentation/demo_runbook.md`](presentation/demo_runbook.md)
    — **пошаговый запуск, токен GigaChat и тайминг демо**;
