@@ -55,6 +55,8 @@
    рассказывает на защите; [`presentation/script.md`](presentation/script.md) — текст
    доклада по слайдам + вопросы комиссии; [`presentation/demo_runbook.md`](presentation/demo_runbook.md)
    — **пошаговый запуск, токен GigaChat и тайминг демо**;
+   [`presentation/demo_manual.md`](presentation/demo_manual.md) — **ручной сценарий демо**
+   (что ввожу / что говорю / на чём акцент, + про учебные данные);
    [`presentation/deck.html`](presentation/deck.html) — **готовые слайды** (открыть в
    браузере, печать в PDF через Cmd/Ctrl+P, альбомная).
 6. Глубже по каждому критерию — `docs/00_overview.md` … `docs/06_decommission.md`.
