@@ -57,6 +57,8 @@
    — **пошаговый запуск, токен GigaChat и тайминг демо**;
    [`presentation/demo_manual.md`](presentation/demo_manual.md) — **ручной сценарий демо**
    (что ввожу / что говорю / на чём акцент, + про учебные данные);
+   [`presentation/print.html`](presentation/print.html) — **печатная Ч/Б версия**: весь
+   текст доклада + вопросы комиссии + шпаргалка на отдельной странице (Cmd/Ctrl+P → A4 → ч/б);
    [`presentation/deck.html`](presentation/deck.html) — **готовые слайды** (открыть в
    браузере, печать в PDF через Cmd/Ctrl+P, альбомная).
 6. Глубже по каждому критерию — `docs/00_overview.md` … `docs/06_decommission.md`.
