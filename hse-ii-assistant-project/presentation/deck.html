@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ВкладНавигатор — защита</title>
+<style>
+  :root{
+    --bg:#F6F8FB; --ink:#0F172A; --blue:#1E3A8A; --blue2:#2D4EAE; --green:#047857;
+    --muted:#52617A; --line:#DCE3EC; --card:#FFFFFF; --soft:#EEF3FA; --amber:#B45309;
+    --red:#B91C1C; --gold:#F59E0B;
+    --mono:ui-monospace,"SF Mono","Menlo","Consolas",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;background:#0b1220;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);}
+  .mono{font-family:var(--mono);}
+
+  /* ---- Stage / scaling ---- */
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  #scaler{width:1280px;height:720px;position:relative;transform-origin:center center;}
+  .slide{
+    position:absolute;inset:0;width:1280px;height:720px;
+    background:linear-gradient(180deg,#FFFFFF 0%,var(--bg) 100%);
+    padding:50px 70px 58px;display:none;flex-direction:column;overflow:hidden;
+  }
+  .slide.active{display:flex;}
+  .slide::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px;
+    background:linear-gradient(180deg,var(--blue),var(--green));}
+
+  /* ---- Header ---- */
+  .kicker{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--green);margin-bottom:9px;display:flex;align-items:center;gap:10px;}
+  .kicker .cnum{background:var(--green);color:#fff;border-radius:5px;padding:2px 9px;font-size:12px;letter-spacing:.05em;}
+  h2.title{font-size:42px;line-height:1.07;font-weight:800;letter-spacing:-.015em;color:var(--ink);}
+  .rule{height:4px;width:74px;background:var(--blue);border-radius:2px;margin:14px 0 0;}
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:18px;}
+
+  /* ---- Bullets ---- */
+  ul.points{list-style:none;display:flex;flex-direction:column;gap:15px;}
+  ul.points li{position:relative;padding-left:30px;font-size:21px;line-height:1.38;color:#1F2A3D;}
+  ul.points li::before{content:"";position:absolute;left:3px;top:9px;width:11px;height:11px;
+    background:var(--blue);border-radius:3px;transform:rotate(45deg);}
+  ul.points.tight li{font-size:19px;gap:10px;}
+  b{font-weight:800;}
+  .em-blue{color:var(--blue);font-weight:800;}
+  .em-green{color:var(--green);font-weight:800;}
+  code,.mono{font-family:var(--mono);}
+  .chipcode{font-family:var(--mono);font-size:.92em;background:#EEF2FD;color:var(--blue);
+    padding:1px 7px;border-radius:5px;font-weight:600;white-space:nowrap;}
+
+  /* ---- Stat blocks ---- */
+  .stat-row{display:flex;gap:20px;}
+  .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px 24px;box-shadow:0 4px 14px rgba(15,23,42,.05);position:relative;overflow:hidden;}
+  .stat::after{content:"";position:absolute;left:0;top:0;height:4px;width:100%;background:var(--green);opacity:.85;}
+  .stat.blue::after{background:var(--blue);}
+  .stat .cap{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .stat .num{font-size:54px;font-weight:800;line-height:1.02;color:var(--green);letter-spacing:-.02em;margin-top:6px;}
+  .stat .num.blue{color:var(--blue);}
+  .stat .lbl{margin-top:8px;font-size:14.5px;color:var(--muted);font-weight:600;line-height:1.3;}
+
+  /* ---- Cards grid ---- */
+  .cards{display:grid;gap:20px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px 24px;box-shadow:0 4px 14px rgba(15,23,42,.05);}
+  .card .ic{font-size:30px;line-height:1;margin-bottom:12px;}
+  .card h3{font-size:20px;font-weight:800;color:var(--blue);margin-bottom:9px;}
+  .card p{font-size:16px;line-height:1.42;color:var(--muted);}
+  .card.g h3{color:var(--green);}
+
+  /* ---- Tables ---- */
+  table.tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);
+    border-radius:14px;overflow:hidden;box-shadow:0 4px 14px rgba(15,23,42,.05);}
+  table.tbl th{background:var(--blue);color:#fff;text-align:left;font-weight:700;
+    font-size:16px;padding:13px 18px;}
+  table.tbl td{padding:12px 18px;border-top:1px solid var(--line);vertical-align:top;
+    line-height:1.34;color:#1F2A3D;font-size:17px;}
+  table.tbl tr:nth-child(even) td{background:#FAFCFF;}
+  table.tbl td.code{font-family:var(--mono);color:var(--blue);font-weight:700;white-space:nowrap;font-size:15.5px;}
+
+  /* ---- Callout banner ---- */
+  .banner{background:linear-gradient(90deg,var(--blue),var(--blue2));color:#fff;
+    border-radius:14px;padding:18px 26px;font-size:21px;font-weight:800;text-align:center;
+    box-shadow:0 6px 18px rgba(30,58,138,.25);}
+  .callout{background:var(--soft);border:1px solid var(--line);border-left:6px solid var(--blue);
+    border-radius:12px;padding:16px 22px;font-size:17px;line-height:1.45;color:#2A3650;}
+  .callout b{color:var(--ink);}
+
+  /* ---- Slide 4: architecture flow ---- */
+  .flow{display:flex;align-items:stretch;gap:0;}
+  .node{background:#fff;border:2px solid var(--blue);border-radius:14px;padding:18px 18px;
+    display:flex;flex-direction:column;justify-content:center;flex:1;min-width:0;
+    box-shadow:0 4px 12px rgba(15,23,42,.05);}
+  .node .ntitle{font-size:18px;font-weight:800;color:var(--blue);margin-bottom:9px;}
+  .node .sub2{font-size:14px;color:var(--muted);line-height:1.36;}
+  .node.core{background:#F0F5FF;}
+  .node.llm{border-color:var(--green);}
+  .node.llm .ntitle{color:var(--green);}
+  .arrow{display:flex;align-items:center;justify-content:center;width:52px;flex:0 0 52px;
+    color:var(--blue);font-size:34px;font-weight:700;}
+  .steps{display:flex;flex-direction:column;gap:8px;}
+  .step{display:flex;align-items:center;gap:9px;font-size:14px;}
+  .step .n{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;
+    font-weight:700;display:flex;align-items:center;justify-content:center;flex:0 0 22px;}
+
+  /* ---- Slide 5: lifecycle pipeline ---- */
+  .pipe{display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:6px;}
+  .pnode{background:#fff;border:2px solid var(--blue);border-radius:12px;padding:14px 16px;
+    font-size:17px;font-weight:800;color:var(--blue);text-align:center;min-width:118px;
+    box-shadow:0 3px 10px rgba(15,23,42,.05);}
+  .pnode small{display:block;font-weight:600;color:var(--muted);font-size:12.5px;margin-top:4px;}
+  .pnode.g{border-color:var(--green);color:var(--green);}
+  .parrow{color:var(--blue);font-size:24px;font-weight:700;}
+  .refresh{display:flex;align-items:center;justify-content:center;gap:14px;}
+  .refresh .rlabel{background:var(--green);color:#fff;border-radius:999px;padding:10px 24px;
+    font-size:16px;font-weight:800;letter-spacing:.04em;box-shadow:0 4px 12px rgba(4,120,87,.25);}
+  .refresh .rdesc{font-size:16px;color:var(--muted);}
+  .cmd-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+  .cmd{font-family:var(--mono);font-size:15px;background:#0F172A;color:#E2E8F0;
+    padding:9px 16px;border-radius:9px;font-weight:600;}
+
+  /* ---- Slide 6: demo comparison ---- */
+  .arrowbig{display:flex;align-items:center;justify-content:center;font-size:44px;
+    color:var(--blue);font-weight:800;}
+
+  /* ---- Slide 8: confusion matrix ---- */
+  .cmatrix{display:grid;grid-template-columns:auto 1fr 1fr;grid-template-rows:auto 1fr 1fr;
+    gap:10px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;
+    box-shadow:0 4px 14px rgba(15,23,42,.05);align-items:stretch;}
+  .cmatrix .h{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.05em;display:flex;align-items:center;justify-content:center;text-align:center;}
+  .cmatrix .cell{border-radius:11px;padding:14px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;min-height:96px;}
+  .cmatrix .cell .v{font-size:40px;font-weight:800;line-height:1;}
+  .cmatrix .cell .t{font-size:12.5px;font-weight:700;margin-top:6px;color:var(--muted);}
+  .cmatrix .good{background:#E6F6EF;color:var(--green);}
+  .cmatrix .good .t{color:var(--green);}
+  .cmatrix .zero{background:#F1F5F9;color:#94A3B8;}
+  .rowlbl{display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;
+    color:var(--muted);writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.04em;}
+
+  /* ---- Slide 9: thesis + table ---- */
+  .thesis{background:linear-gradient(110deg,#11296A,#1E3A8A);color:#fff;border-radius:14px;
+    padding:18px 26px;box-shadow:0 8px 22px rgba(17,41,106,.3);}
+  .thesis .big{font-size:25px;font-weight:800;line-height:1.2;}
+  .thesis .big .hl{color:var(--gold);}
+  .thesis .small{margin-top:7px;font-size:15px;color:#C7D2FE;font-weight:500;line-height:1.4;}
+
+  /* ---- Slide 10: bars ---- */
+  .bars{display:flex;align-items:flex-end;gap:10px;height:150px;background:#fff;
+    border:1px solid var(--line);border-radius:14px;padding:18px 22px;
+    box-shadow:0 4px 14px rgba(15,23,42,.05);}
+  .bars .bar{flex:1;background:linear-gradient(180deg,var(--blue2),var(--blue));
+    border-radius:6px 6px 0 0;min-width:0;}
+  .bars .bar.r{background:linear-gradient(180deg,#EF6B6B,var(--red));flex:0 0 14%;}
+
+  /* ---- Slide 11: before / after ---- */
+  .ba{display:flex;align-items:stretch;gap:18px;}
+  .ba .panel{flex:1;border-radius:14px;padding:20px 22px;border:1px solid var(--line);background:#fff;
+    box-shadow:0 4px 14px rgba(15,23,42,.05);}
+  .ba .panel.before{border-top:5px solid var(--red);}
+  .ba .panel.after{border-top:5px solid var(--green);}
+  .ba .ph{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+  .ba .panel.before .ph{color:var(--red);}
+  .ba .panel.after .ph{color:var(--green);}
+  .ba .metric{display:flex;justify-content:space-between;font-size:17px;padding:7px 0;border-top:1px dashed var(--line);}
+  .ba .metric:first-of-type{border-top:none;}
+  .ba .metric b{font-weight:800;}
+  .ba .mid{display:flex;align-items:center;font-size:38px;color:var(--green);font-weight:800;}
+
+  /* ---- Slide 12: thresholds + ladder ---- */
+  .thr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  .thr .t{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;
+    box-shadow:0 3px 10px rgba(15,23,42,.04);}
+  .thr .t .k{font-size:14px;color:var(--muted);font-weight:600;}
+  .thr .t .v{font-size:21px;font-weight:800;color:var(--blue);margin-top:4px;font-family:var(--mono);}
+  .ladder{display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:4px;}
+  .lstep{background:#fff;border:2px solid var(--line);border-radius:11px;padding:12px 18px;
+    font-size:17px;font-weight:800;font-family:var(--mono);}
+  .lstep.s1{border-color:#94A3B8;color:#64748B;}
+  .lstep.s2{border-color:var(--blue);color:var(--blue);}
+  .lstep.s3{border-color:var(--green);color:var(--green);background:#ECFaf4;}
+  .lstep.s4{border-color:var(--amber);color:var(--amber);}
+  .lstep.s5{border-color:var(--red);color:var(--red);background:#FEF2F2;}
+  .larrow{color:#94A3B8;font-size:22px;font-weight:700;padding:0 4px;}
+
+  /* ---- Slide 14: checklist ---- */
+  .checks{display:grid;grid-template-columns:1fr 1fr;gap:13px 26px;}
+  .chk{display:flex;align-items:center;gap:13px;font-size:18px;font-weight:600;color:#1F2A3D;}
+  .chk .mk{width:30px;height:30px;border-radius:8px;background:var(--green);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;flex:0 0 30px;}
+  .chk .cn{color:var(--muted);font-size:14px;font-weight:700;margin-left:auto;}
+
+  /* ---- Slide 1: hero ---- */
+  .hero{flex:1;display:flex;flex-direction:column;justify-content:center;}
+  .heroname{font-size:104px;font-weight:800;letter-spacing:-.03em;color:var(--ink);line-height:.98;}
+  .heroname .nav{color:var(--blue);}
+  .herosub{font-size:25px;color:var(--muted);font-weight:500;margin-top:18px;max-width:920px;line-height:1.36;}
+  .thesisline{margin-top:34px;display:flex;gap:18px;max-width:1000px;}
+  .chip{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 24px;flex:1;
+    box-shadow:0 4px 14px rgba(15,23,42,.05);}
+  .chip .k{font-size:14px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px;}
+  .chip.k-core{border-top:5px solid var(--blue);}
+  .chip.k-core .k{color:var(--blue);}
+  .chip.k-llm{border-top:5px solid var(--green);}
+  .chip.k-llm .k{color:var(--green);}
+  .chip .v{font-size:18px;color:var(--ink);line-height:1.34;}
+  .herofacts{margin-top:32px;display:flex;gap:0;border-top:1px solid var(--line);padding-top:22px;}
+  .herofacts .f{flex:1;text-align:center;border-right:1px solid var(--line);}
+  .herofacts .f:last-child{border-right:none;}
+  .herofacts .f .n{font-size:32px;font-weight:800;color:var(--blue);}
+  .herofacts .f .l{font-size:13.5px;color:var(--muted);font-weight:600;margin-top:3px;}
+  .authors{margin-top:30px;font-size:20px;color:var(--ink);font-weight:700;}
+  .authors .sep{color:var(--blue);margin:0 12px;}
+  .course{margin-top:6px;font-size:16px;color:var(--muted);}
+
+  /* ---- footer + nav ---- */
+  .pagefoot{position:absolute;left:70px;right:70px;bottom:20px;display:flex;
+    align-items:center;justify-content:space-between;font-size:13px;color:#9AA7BC;font-weight:600;}
+  .pagefoot .brand{display:flex;align-items:center;gap:8px;}
+  .pagefoot .brand .d{width:7px;height:7px;border-radius:2px;background:var(--blue);transform:rotate(45deg);}
+  #nav{position:fixed;bottom:14px;right:18px;display:flex;gap:9px;z-index:50;}
+  #nav button{width:36px;height:36px;border-radius:8px;border:1px solid #334155;background:#1e293b;
+    color:#e2e8f0;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  #nav button:hover{background:#334155;}
+  #counter{position:fixed;bottom:21px;left:50%;transform:translateX(-50%);z-index:50;
+    font-family:var(--mono);font-size:12px;color:#94A3B8;letter-spacing:.12em;}
+
+  @media print{
+    @page{size:1280px 720px;margin:0;}
+    html,body{background:#fff;height:auto;}
+    #nav,#counter{display:none!important;}
+    #stage{position:static;overflow:visible;}
+    #scaler{transform:none!important;width:1280px;height:auto;}
+    .slide{display:flex!important;position:relative;inset:auto;page-break-after:always;break-after:page;}
+  }
+</style>
+</head>
+<body>
+<div id="stage"><div id="scaler">
+
+  <!-- ============ SLIDE 1 — TITLE ============ -->
+  <section class="slide active">
+    <div class="hero">
+      <div class="heroname"><span class="nav">Вклад</span>Навигатор</div>
+      <div class="herosub">ИИ-ассистент потребителя финансовых услуг — модуль подбора вклада.</div>
+      <div class="thesisline">
+        <div class="chip k-core"><div class="k">Детерминированное ядро</div>
+          <div class="v">Источник истины по всем цифрам и решениям</div></div>
+        <div class="chip k-llm"><div class="k">LLM-слой · GigaChat-2-Max</div>
+          <div class="v">Только объясняет результат — не вводит новых чисел</div></div>
+      </div>
+      <div class="herofacts">
+        <div class="f"><div class="n">6 / 6</div><div class="l">критериев MLOps</div></div>
+        <div class="f"><div class="n">17 / 17</div><div class="l">golden-кейсов</div></div>
+        <div class="f"><div class="n">42</div><div class="l">теста</div></div>
+        <div class="f"><div class="n">29</div><div class="l">вкладов · 8 банков</div></div>
+        <div class="f"><div class="n">OK</div><div class="l">вердикт эксплуатации</div></div>
+      </div>
+      <div class="authors">Веселов Илья<span class="sep">·</span>Гаряева Эльвина</div>
+      <div class="course">Курс ВШЭ «Прикладное применение методов ИИ»</div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>01 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 2 — TASK ============ -->
+  <section class="slide">
+    <div class="kicker">Задача и образ результата</div>
+    <h2 class="title">Ставки выглядят похоже — реальный доход другой</h2>
+    <div class="rule"></div>
+    <div class="body" style="flex-direction:row;gap:34px;align-items:center;">
+      <ul class="points" style="flex:1.15;">
+        <li>Ставки 17 %, 17,3 %, 17,9 % выглядят похоже, но реальный доход искажают <b>капитализация, акции, лимит АСВ</b> и условия досрочного закрытия.</li>
+        <li>Вход — параметры клиента: сумма, срок, валюта, цель, пополнение/снятие, ожидаемая ставка, свободный вопрос.</li>
+        <li>Выход — <span class="em-blue">сравнительная таблица</span> top-N с эффективной ставкой и риск-флагами либо <span class="em-blue">корректный отказ</span>.</li>
+        <li>Граница: это <b>не инвестсоветник</b> — кредиты, акции, крипта, страховки вне компетенции.</li>
+      </ul>
+      <div style="flex:.85;display:flex;flex-direction:column;gap:12px;">
+        <div class="card" style="text-align:center;"><div class="ic">📥</div><h3>Вход</h3><p>сумма · срок · валюта · цель · пополнение/снятие · вопрос</p></div>
+        <div class="arrowbig">↓</div>
+        <div class="card g" style="text-align:center;"><div class="ic">⚙️</div><h3>Ассистент</h3><p>ядро считает → LLM объясняет</p></div>
+        <div class="arrowbig">↓</div>
+        <div class="card" style="text-align:center;"><div class="ic">📊</div><h3>Выход</h3><p>сравнительная таблица top-N + риски — либо корректный отказ</p></div>
+      </div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>02 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 3 — BUSINESS VALUE ============ -->
+  <section class="slide">
+    <div class="kicker"><span class="cnum">Критерий 1</span> Бизнес-ценность и эффект на процесс</div>
+    <h2 class="title">Точка выбора вклада — сейчас ручное сравнение</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <div class="cards" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="card"><div class="ic">📈</div><h3>Конверсия ↑</h3><p>Рост конверсии в открытие вклада в точке выбора: онбординг, контакт-центр, ДБО.</p></div>
+        <div class="card"><div class="ic">📉</div><h3>Нагрузка ↓</h3><p>Снижение нагрузки на контакт-центр — клиент сам получает обоснованное сравнение.</p></div>
+        <div class="card g"><div class="ic">🛡️</div><h3>Регуляторный риск ↓</h3><p>Анти-мисселинг: отказ <span class="chipcode">UNREALISTIC_EXPECTATION</span> при нереалистичном ожидании.</p></div>
+      </div>
+      <div class="callout"><b>Прозрачность как требование регулятора:</b> все цифры детерминированы и воспроизводимы, объяснение нельзя «придумать» (groundedness). А корректно мерить эффект — это <span class="em-blue">причинный</span> вопрос: A/B-тест на конверсию, а не просто предсказание.</div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>03 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 4 — ARCHITECTURE ============ -->
+  <section class="slide">
+    <div class="kicker">Архитектура гибрида «ядро + LLM»</div>
+    <h2 class="title">Ядро решает, LLM объясняет</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <div class="flow">
+        <div class="node"><div class="ntitle">Streamlit</div><div class="sub2">Веб-форма: параметры клиента и свободный вопрос</div></div>
+        <div class="arrow">→</div>
+        <div class="node core"><div class="ntitle">Ядро · src/core</div>
+          <div class="steps">
+            <div class="step"><span class="n">1</span><span class="mono">guards.py — отказ</span></div>
+            <div class="step"><span class="n">2</span><span class="mono">filtering.py</span></div>
+            <div class="step"><span class="n">3</span><span class="mono">effective_rate.py</span></div>
+            <div class="step"><span class="n">4</span><span class="mono">ranking.py · 1.0.0</span></div>
+          </div></div>
+        <div class="arrow">→</div>
+        <div class="node llm"><div class="ntitle">LLM-слой</div><div class="sub2">GigaChat-2-Max пересказывает результат ядра. <b>groundedness</b> <span class="chipcode">ACCEPT=1.0</span> → необоснованное число → откат к шаблону.</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ntitle">Журнал · Мониторинг</div><div class="sub2"><span class="mono">logging_store.py</span> — каждый ответ и инцидент в JSONL.</div></div>
+      </div>
+      <div class="banner">LLM не в критическом пути принятия решения → главная мера против ML-рисков</div>
+      <div class="cards" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="card"><h3>Источник истины</h3><p>Все числа считает ядро; LLM получает закрытый список и не вводит новых.</p></div>
+        <div class="card g"><h3>Groundedness</h3><p>Каждое число из текста сверяется с ядром; галлюцинация → шаблон.</p></div>
+        <div class="card"><h3>Офлайн-fallback</h3><p>Без ключа GigaChat — детерминированные объяснения; цифры не меняются.</p></div>
+      </div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>04 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 5 — LIFECYCLE ============ -->
+  <section class="slide">
+    <div class="kicker"><span class="cnum">Критерий 2</span> Жизненный цикл модели как MVP</div>
+    <h2 class="title">Полный цикл — один воспроизводимый конвейер</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <div class="pipe">
+        <div class="pnode g">Данные<small>make data · 29 вкладов</small></div><span class="parrow">→</span>
+        <div class="pnode g">Конфиг<small>GOAL_WEIGHTS · 1.0.0</small></div><span class="parrow">→</span>
+        <div class="pnode">Валидация<small>make eval</small></div><span class="parrow">→</span>
+        <div class="pnode">Деплой<small>make app · Docker</small></div><span class="parrow">→</span>
+        <div class="pnode">Эксплуатация<small>журнал JSONL</small></div><span class="parrow">→</span>
+        <div class="pnode">Мониторинг<small>make drift · PSI</small></div><span class="parrow">→</span>
+        <div class="pnode">Вывод<small>decommission</small></div>
+      </div>
+      <div class="refresh"><span class="rlabel">↺ REFRESH</span><span class="rdesc">обратная связь: дрейф рынка → пересборка каталога <span class="chipcode">make data</span> → цикл замыкается</span></div>
+      <div class="cmd-row">
+        <span class="cmd">make data</span><span class="cmd">make app</span><span class="cmd">make eval</span><span class="cmd">make drift</span><span class="cmd">make test</span>
+      </div>
+      <ul class="points tight">
+        <li>«Обучение» — это <b>версионируемый конфиг скоринга</b> <span class="chipcode">RANKING_VERSION="ranking-1.0.0"</span>, а не нейросеть.</li>
+        <li>Данные детерминированы: ставка = base(ключевая ЦБ <b>16.0</b>) + надбавки; <b>42 теста</b> закрепляют поведение.</li>
+      </ul>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>05 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 6 — DEMO ============ -->
+  <section class="slide">
+    <div class="kicker">Демо подбора вклада</div>
+    <h2 class="title">Скрытое условие: номинал ≠ реальный доход</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <div class="stat-row" style="align-items:center;">
+        <div class="stat blue"><div class="cap">Номинальная ставка</div><div class="num blue">17,9 %</div><div class="lbl">вклад «Максимальный»</div></div>
+        <div class="arrowbig" style="flex:0 0 64px;">→</div>
+        <div class="stat"><div class="cap">Эффективная (APY)</div><div class="num">19,44 %</div><div class="lbl">с ежемесячной капитализацией</div></div>
+        <div class="stat blue"><div class="cap">Лимит АСВ</div><div class="num blue">1,4 млн ₽</div><div class="lbl">риск-флаг при превышении</div></div>
+      </div>
+      <ul class="points tight">
+        <li>Эффективную ставку считает <b>ядро</b>, не LLM — разница почти <b>1,5 п.п.</b> возникает из капитализации.</li>
+        <li>Риск-флаги: превышение лимита АСВ, сгорание процентов при досрочном закрытии, акционные / только-онлайн условия.</li>
+        <li>Сумма выше 1,4 млн ₽ → застраховано 1,4 млн, остальное вне страховки; для валютных вкладов АСВ не применяется.</li>
+      </ul>
+      <div class="callout">Демо: вкладка <b>«🎬 Демо»</b> → один клик по сценарию «Скрытое условие 17,9 % → 19,44 %» и «Сумма выше лимита АСВ».</div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>06 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 7 — REFUSALS ============ -->
+  <section class="slide">
+    <div class="kicker">Корректные отказы — 8 кодов</div>
+    <h2 class="title">Отказ — отдельный измеримый класс ответа</h2>
+    <div class="rule"></div>
+    <div class="body" style="justify-content:flex-start;gap:16px;">
+      <table class="tbl">
+        <thead><tr><th style="width:36%;">Код</th><th>Когда срабатывает</th></tr></thead>
+        <tbody>
+          <tr><td class="code">INVALID_INPUT</td><td>некорректный ввод (сумма ≤ 0, срок вне 1–120 мес.)</td></tr>
+          <tr><td class="code">OUT_OF_SCOPE</td><td>вопрос вне подбора вклада (кредиты / акции / крипта)</td></tr>
+          <tr><td class="code">UNREALISTIC_EXPECTATION</td><td>ожидаемая ставка &gt; рынок + 3 п.п. — анти-мисселинг</td></tr>
+          <tr><td class="code">AMOUNT_OUT_OF_RANGE</td><td>сумма не подходит под доступные вклады</td></tr>
+          <tr><td class="code">TERM_UNAVAILABLE · CURRENCY_UNAVAILABLE</td><td>нет нужного срока / валюты в каталоге</td></tr>
+          <tr><td class="code">CONSTRAINTS_UNAVAILABLE</td><td>нет вкладов под дополнительные условия</td></tr>
+          <tr><td class="code">PROMPT_INJECTION</td><td>попытка переопределить инструкции ассистента</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">Все проверки детерминированы и покрыты тестами (<span class="chipcode">src/core/guards.py</span>). Отказ всегда <b>конкретный и полезный</b> — подсказывает доступные сроки / минимальный взнос, а не «ничего не найдено».</div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>07 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 8 — VALIDATION ============ -->
+  <section class="slide">
+    <div class="kicker"><span class="cnum">Критерий 4</span> Валидация и метрики</div>
+    <h2 class="title">Golden-набор с независимым эталоном</h2>
+    <div class="rule"></div>
+    <div class="body" style="flex-direction:row;gap:30px;align-items:center;">
+      <div style="flex:1.25;display:flex;flex-direction:column;gap:18px;">
+        <div class="stat-row">
+          <div class="stat"><div class="cap">Пройдено кейсов</div><div class="num">17/17</div><div class="lbl">9 ok · 8 refused</div></div>
+          <div class="stat"><div class="cap">Ранжирование</div><div class="num">1.0</div><div class="lbl">top-1 · MRR = 1.0</div></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><div class="cap">Отказы P / R / F1</div><div class="num">1.0</div><div class="lbl">точность кода = 1.0</div></div>
+          <div class="stat blue"><div class="cap">Задержка p95</div><div class="num blue">0,12 мс</div><div class="lbl">вердикт — OK</div></div>
+        </div>
+        <ul class="points tight">
+          <li>Эталонный лучший вклад вычисляется <b>независимо</b> от ранжирующего кода — прямым перебором по APY.</li>
+          <li>Мы проверяем модель против экономически верного ответа, а не сверяем её с самой собой.</li>
+        </ul>
+      </div>
+      <div style="flex:.75;">
+        <div style="font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;text-align:center;">Матрица ошибок (отказ = «+»)</div>
+        <div class="cmatrix">
+          <div class="h"></div><div class="h">пред. отказ</div><div class="h">пред. выдача</div>
+          <div class="rowlbl">ждали отказ</div><div class="cell good"><div class="v">8</div><div class="t">TP</div></div><div class="cell zero"><div class="v">0</div><div class="t">FN</div></div>
+          <div class="rowlbl">ждали выдачу</div><div class="cell zero"><div class="v">0</div><div class="t">FP</div></div><div class="cell good"><div class="v">9</div><div class="t">TN</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>08 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 9 — KEY: ML FRAGILITY ============ -->
+  <section class="slide">
+    <div class="kicker"><span class="cnum">Критерии 4–5 · ключевой</span> ML-специфичная хрупкость</div>
+    <div class="thesis">
+      <div class="big"><span class="hl">ML ломается тихо</span> — галлюцинации, дрейф, сдвиг входа, переуверенность; обычное тестирование их не ловит.</div>
+      <div class="small">Стратегия №1 — архитектурная: решение вынесено в детерминированное ядро, LLM вне критического пути. Большую часть ML-риска мы убрали из контура решения.</div>
+    </div>
+    <table class="tbl" style="font-size:13.5px;margin-top:14px;">
+      <thead><tr>
+        <th style="width:21%;">ML-специфичная хрупкость</th><th style="width:27%;">Почему это не обычный баг</th>
+        <th style="width:24%;">Как ловим (детект)</th><th style="width:28%;">Как боремся (митигирование)</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="font-size:13.5px;"><b>Галлюцинация LLM</b></td><td style="font-size:13px;">уверенно выдаёт правдоподобно-неверное; юнит-тесты не видят</td><td style="font-size:13px;">groundedness: число vs ядро</td><td style="font-size:12.5px;"><span class="chipcode">ACCEPT=1.0</span> → откат к шаблону; рост → <span class="chipcode">LLM_OFF</span></td></tr>
+        <tr><td style="font-size:13.5px;"><b>Prompt injection</b></td><td style="font-size:13px;">естественный язык — вектор атаки, которого нет в обычном ПО</td><td style="font-size:13px;">guardrail по входу</td><td style="font-size:12.5px;"><span class="chipcode">PROMPT_INJECTION</span>; LLM вне критпути</td></tr>
+        <tr><td style="font-size:13.5px;"><b>Дрейф / концепт-дрейф</b></td><td style="font-size:13px;">качество тихо падает; «правильный ответ» меняется во времени</td><td style="font-size:13px;">PSI ставок + SLA свежести</td><td style="font-size:12.5px;"><span class="chipcode">REFRESH</span> → <span class="chipcode">make data</span></td></tr>
+        <tr><td style="font-size:13.5px;"><b>Сдвиг распределения входа</b></td><td style="font-size:13px;">ML деградирует на «хвостах», которых не видел</td><td style="font-size:13px;">PSI входа + проверка scope</td><td style="font-size:12.5px;">отказы <span class="chipcode">OUT_OF_SCOPE</span></td></tr>
+        <tr><td style="font-size:13.5px;"><b>Тихая деградация ранжирования</b></td><td style="font-size:13px;">нет краша — просто хуже советы; не видно без эталона</td><td style="font-size:13px;">golden с независимым эталоном</td><td style="font-size:12.5px;">порог <span class="chipcode">top1 ≥ 0.90</span></td></tr>
+        <tr><td style="font-size:13.5px;"><b>Мисселинг (переуверенность)</b></td><td style="font-size:13px;">модель «продаёт» нереалистичное ожидание</td><td style="font-size:13px;">expected_rate vs рынок</td><td style="font-size:12.5px;"><span class="chipcode">UNREALISTIC_EXPECTATION</span></td></tr>
+        <tr><td style="font-size:13.5px;"><b>Невоспроизводимость</b></td><td style="font-size:13px;">ML трудно повторить и проверить регулятору</td><td style="font-size:13px;"><span class="chipcode">RANKING_VERSION</span>, фикс. сид</td><td style="font-size:12.5px;">ядро + конфиг правил, 42 теста</td></tr>
+      </tbody>
+    </table>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>09 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 10 — MONITORING ============ -->
+  <section class="slide">
+    <div class="kicker"><span class="cnum">Критерий 3</span> Эксплуатация и мониторинг</div>
+    <h2 class="title">Каждый ответ — строка в журнале JSONL</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <div class="stat-row">
+        <div class="stat blue"><div class="cap">Полей в записи</div><div class="num blue">&gt; 20</div><div class="lbl">включая версию ранжирования</div></div>
+        <div class="stat"><div class="cap">Доля отказов</div><div class="num">19 %</div><div class="lbl">на 180 запросах демо-трафика</div></div>
+        <div class="stat blue"><div class="cap">Снапшот → вердикт</div><div class="num blue">1 → 1</div><div class="lbl">метрики питают критерии вывода</div></div>
+      </div>
+      <div style="display:flex;gap:20px;align-items:stretch;">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Запросы по дням (дашборд)</div>
+          <div class="bars">
+            <div class="bar" style="height:55%"></div><div class="bar" style="height:72%"></div>
+            <div class="bar" style="height:48%"></div><div class="bar" style="height:88%"></div>
+            <div class="bar" style="height:66%"></div><div class="bar" style="height:100%"></div>
+            <div class="bar" style="height:60%"></div><div class="bar" style="height:78%"></div>
+            <div class="bar" style="height:52%"></div><div class="bar" style="height:84%"></div>
+          </div>
+        </div>
+        <ul class="points tight" style="flex:1;justify-content:center;">
+          <li>Дашборд (вкладка «Мониторинг»): объём, доля отказов, задержки, причины отказов по кодам, дрейф входа (PSI), свежесть.</li>
+          <li>Клики из вкладки «Демо» тоже попадают в журнал — это <b>живой поток</b>, а не статичная картинка.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>10 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 11 — DEGRADATION ============ -->
+  <section class="slide">
+    <div class="kicker"><span class="cnum">Критерий 5</span> Противодействие деградации · make drift</div>
+    <h2 class="title">Деградация → детекция → реакция → восстановление</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <div class="ba">
+        <div class="panel before">
+          <div class="ph">До — каталог устарел</div>
+          <div class="metric"><span>PSI ставок</span><b>12,36 — значимый</b></div>
+          <div class="metric"><span>MAE по ставке</span><b>5,42 п.п.</b></div>
+          <div class="metric"><span>top-1 vs рынок</span><b>0.8</b></div>
+          <div class="metric"><span>свежесть</span><b>107 дн. · critical</b></div>
+          <div class="metric"><span>вердикт</span><b class="mono" style="color:var(--red)">REFRESH</b></div>
+        </div>
+        <div class="mid">→</div>
+        <div class="panel after">
+          <div class="ph">После — пересборка каталога</div>
+          <div class="metric"><span>PSI ставок</span><b>≈ 0</b></div>
+          <div class="metric"><span>MAE по ставке</span><b>≈ 0 п.п.</b></div>
+          <div class="metric"><span>top-1 vs рынок</span><b>1.0</b></div>
+          <div class="metric"><span>свежесть</span><b>0 дн. · ok</b></div>
+          <div class="metric"><span>вердикт</span><b class="mono" style="color:var(--green)">OK</b></div>
+        </div>
+      </div>
+      <div class="callout">Сценарий: ключевая ставка <b>16 → 11 %</b>, промо-войны кончились — каталог рассинхронизировался с рынком. Механизм противодействия показан, <b>даже если штатные данные к деградации не приводят</b> — её смоделировали специально.</div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>11 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 12 — DECOMMISSION ============ -->
+  <section class="slide">
+    <div class="kicker"><span class="cnum">Критерий 6</span> Критерии вывода модели из эксплуатации</div>
+    <h2 class="title">Решение по формальным порогам, а не «на глаз»</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <div class="thr">
+        <div class="t"><div class="k">groundedness</div><div class="v">≥ 0.98</div></div>
+        <div class="t"><div class="k">refusal precision</div><div class="v">≥ 0.90</div></div>
+        <div class="t"><div class="k">ranking top-1</div><div class="v">≥ 0.90</div></div>
+        <div class="t"><div class="k">refusal recall</div><div class="v">≥ 0.85</div></div>
+        <div class="t"><div class="k">latency p95</div><div class="v">≤ 1500 мс</div></div>
+        <div class="t"><div class="k">свежесть каталога</div><div class="v">14 / 28 дн.</div></div>
+      </div>
+      <div class="ladder">
+        <div class="lstep s1">NONE</div><span class="larrow">→</span>
+        <div class="lstep s2">MONITOR</div><span class="larrow">→</span>
+        <div class="lstep s3">REFRESH</div><span class="larrow">→</span>
+        <div class="lstep s4">LLM_OFF</div><span class="larrow">→</span>
+        <div class="lstep s5">DECOMMISSION</div>
+      </div>
+      <div class="callout">Развилка: есть безопасный детерминированный fallback → <b>галлюцинации LLM ведут к <span class="chipcode">LLM_OFF</span></b> (ядро остаётся), а не к полному выводу. Полный <span class="chipcode">DECOMMISSION</span> — крайняя мера при деградации самого ядра. Текущий вердикт — <span class="em-green">OK</span>.</div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>12 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 13 — THEORY ============ -->
+  <section class="slide">
+    <div class="kicker">Теоретический контекст курса</div>
+    <h2 class="title">Куда ложится проект в теории</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <div class="cards" style="grid-template-columns:1fr 1fr;">
+        <div class="card"><div class="ic">🎯</div><h3>Causal inference vs предсказание</h3><p>Подбор вклада — ранжирование по детерминированным формулам, <b>не</b> причинный вывод; причинность нужна для оценки бизнес-эффекта (A/B). Athey &amp; Imbens (2019).</p></div>
+        <div class="card"><div class="ic">⚖️</div><h3>ML-модель vs эконометрика</h3><p>ML оптимизирует предсказание / ранжирование, эконометрика — интерпретируемость; ядро ближе к прозрачной модели правил, LLM — слой UX.</p></div>
+        <div class="card g"><div class="ic">🧩</div><h3>ML-solution-driven</h3><p>Решение принимает детерминированное ядро (управляемый модельный риск), LLM не в критическом пути → управление сложностью.</p></div>
+        <div class="card"><div class="ic">🏦</div><h3>Модельный риск (MRM)</h3><p>ЦБ РФ (2025), SR 11-7, KPMG, Deloitte — источники риска данных / модели / использования, валидация, мониторинг.</p></div>
+      </div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>13 / 14</span></div>
+  </section>
+
+  <!-- ============ SLIDE 14 — CONCLUSIONS ============ -->
+  <section class="slide">
+    <div class="kicker">Выводы и дальнейшие шаги</div>
+    <h2 class="title">MVP полного ЖЦМ с управляемым модельным риском</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <div class="checks">
+        <div class="chk"><span class="mk">✓</span>Бизнес-ценность и эффект на процесс<span class="cn">крит. 1</span></div>
+        <div class="chk"><span class="mk">✓</span>ЖЦМ воспроизведён как MVP<span class="cn">крит. 2</span></div>
+        <div class="chk"><span class="mk">✓</span>Эксплуатация и мониторинг<span class="cn">крит. 3</span></div>
+        <div class="chk"><span class="mk">✓</span>Валидация и модельный риск<span class="cn">крит. 4</span></div>
+        <div class="chk"><span class="mk">✓</span>Противодействие деградации<span class="cn">крит. 5</span></div>
+        <div class="chk"><span class="mk">✓</span>Критерии вывода модели<span class="cn">крит. 6</span></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><div class="cap">Golden</div><div class="num">17/17</div><div class="lbl">top-1 = 1.0</div></div>
+        <div class="stat blue"><div class="cap">Критериев закрыто</div><div class="num blue">6 / 6</div><div class="lbl">подтверждено кодом и демо</div></div>
+        <div class="stat"><div class="cap">Вердикт</div><div class="num">OK</div><div class="lbl">эксплуатация в норме</div></div>
+      </div>
+      <div class="callout"><b>Дальше:</b> реальный A/B на конверсию (причинный эффект), автоматизация <span class="chipcode">REFRESH</span> по SLA, расширение golden-набора. <b>Ограничения честно:</b> данные учебные и не оферта, банки вымышленные, LLM-слой опционален.</div>
+    </div>
+    <div class="pagefoot"><span class="brand"><span class="d"></span>ВкладНавигатор · защита</span><span>14 / 14</span></div>
+  </section>
+
+</div></div>
+
+<div id="counter">01 / 14</div>
+<div id="nav"><button id="prev" aria-label="Назад">←</button><button id="next" aria-label="Вперёд">→</button></div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const counter=document.getElementById('counter');
+  const pad=n=>String(n).padStart(2,'0');
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    counter.textContent=pad(i+1)+' / '+pad(slides.length);
+    location.hash=i+1;
+  }
+  function scale(){
+    const sc=document.getElementById('scaler');
+    sc.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+  document.getElementById('next').onclick=()=>show(i+1);
+  document.getElementById('prev').onclick=()=>show(i-1);
+  window.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){show(i+1);e.preventDefault();}
+    if(e.key==='ArrowLeft'||e.key==='PageUp'){show(i-1);e.preventDefault();}
+    if(e.key==='Home')show(0); if(e.key==='End')show(slides.length-1);
+  });
+  window.addEventListener('resize',scale);
+  scale();show((parseInt(location.hash.replace('#',''))||1)-1);
+</script>
+</body>
+</html>
