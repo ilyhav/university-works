@@ -1,0 +1,10 @@
+pandas>=2.0,<4
+numpy>=1.24,<3
+requests>=2.31,<3
+pyarrow>=14.0,<25      # parquet-кэш
+lxml>=4.9,<7           # pd.read_html для таблиц ЦБ
+scipy>=1.11,<2         # MLE, статистика, оптимизация
+scikit-learn>=1.3,<2   # PCA
+statsmodels>=0.14,<1   # ADF/KPSS, регрессии в бэктесте
+matplotlib>=3.7,<4
+arch>=6.2,<9           # GARCH (EWMA/GARCH(1,1)) и MLE-волатильность

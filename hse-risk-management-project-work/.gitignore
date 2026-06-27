@@ -1,0 +1,34 @@
+# Python / local environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS / IDE / local agent settings
+.DS_Store
+.idea/
+.vscode/
+.claude/
+
+# Generated network cache. Recreated by scripts.fetch_all.
+data_cache/
+
+# Temporary notebooks/checkpoints
+.ipynb_checkpoints/
+
+# Private team/internal preparation notes. Not for public repository.
+docs/
+
+# Presentation/deck assets — not part of the submission.
+outputs/slides/
+
+# Local scratch / one-off tooling.
+tmp/
+
+# Matplotlib/font caches
+.cache/
+matplotlib-cache/
